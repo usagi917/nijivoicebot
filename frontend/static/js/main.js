@@ -54,24 +54,53 @@ class VoiceChat {
 
                     // 音声URLが存在する場合
                     if (data.voice_url) {
-                        console.log('音声URL:', data.voice_url); // デバッグ用
+                        console.log('音声URL:', data.voice_url);
 
                         const audioPlayer = document.getElementById('audio-player');
+                        
+                        // イベントリスナーを一旦すべて削除
+                        audioPlayer.onplay = null;
+                        audioPlayer.onended = null;
+                        audioPlayer.onpause = null;
+                        audioPlayer.onerror = null;
+
+                        // 新しいイベントリスナーを設定
+                        audioPlayer.addEventListener('play', () => {
+                            console.log('音声再生開始');
+                            this.updateStatus('音声再生中...');
+                        });
+
+                        audioPlayer.addEventListener('ended', () => {
+                            console.log('音声再生終了');
+                            this.updateStatus('準備完了');
+                        });
+
+                        audioPlayer.addEventListener('pause', () => {
+                            console.log('音声再生一時停止');
+                            this.updateStatus('準備完了');
+                        });
+
+                        audioPlayer.addEventListener('error', (e) => {
+                            console.error('音声再生エラー:', e);
+                            this.updateStatus('準備完了');
+                            this.showError('音声の再生中にエラーが発生しました');
+                        });
+
                         audioPlayer.src = data.voice_url;
                         audioPlayer.style.display = 'block';
 
                         try {
-                            // 音声の自動再生
                             await audioPlayer.play();
-                            this.updateStatus('音声再生中...');
                         } catch (playError) {
                             console.error('音声再生エラー:', playError);
                             this.showError('音声の再生に失敗しました。再生ボタンを押して再生してください。');
+                            this.updateStatus('準備完了');
                         }
                     }
                 } catch (error) {
                     console.error('メッセージ処理エラー:', error);
                     this.showError('メッセージの処理中にエラーが発生しました');
+                    this.updateStatus('準備完了');
                 }
             };
         };
@@ -85,6 +114,24 @@ class VoiceChat {
                 this.stopRecording();
             } else {
                 this.startRecording();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Alt') {
+                event.preventDefault();
+                if (!this.isRecording) {
+                    this.startRecording();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'Alt') {
+                event.preventDefault();
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
             }
         });
     }

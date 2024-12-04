@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NijiVoice - リアルタイム音声会話</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NijiVoice</h1>
+            <div class="voice-actor-selector">
+                <label for="voice-actor">キャラクター選択:</label>
+                <select id="voice-actor">
+                    <option value="1">水戸 明日菜</option>
+                    <!-- 他のキャラクターオプションをここに追加 -->
+                </select>
+            </div>
+        </header>
+
+        <main>
+            <div class="chat-container">
+                <div id="chat-messages" class="messages"></div>
+            </div>
+
+            <div class="controls">
+                <button id="record-button" class="record-button">
+                    <span class="record-icon"></span>
+                    <span class="button-text">会話開始</span>
+                </button>
+                <div id="status" class="status">準備完了</div>
+            </div>
+        </main>
+
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <audio id="audio-player" controls style="margin-top: 20px; width: 100%;"></audio>
+
+    <script src="static/js/main.js"></script>
+</body>
+</html> 

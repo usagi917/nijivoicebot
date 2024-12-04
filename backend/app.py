@@ -22,6 +22,7 @@ from config import (
     VOICE_FORMAT,
     MAX_RETRIES,
     RETRY_DELAY,
+    MAX_HISTORY_LENGTH,
 )
 
 # ロギングの設定
@@ -52,21 +53,47 @@ client = AsyncOpenAI(
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-        self.conversation_history: Dict[str, List[Dict]] = {}
+        self.conversation_history: Dict[WebSocket, List[Dict]] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
         self.conversation_history[websocket] = []
-        logger.info("connection open")
+        logger.info("WebSocket接続を確立しました")
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
-        del self.conversation_history[websocket]
-        logger.info("connection closed")
+        if websocket in self.conversation_history:
+            del self.conversation_history[websocket]
+        logger.info("WebSocket接続を切断しました")
 
     async def send_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
+
+    def add_to_history(self, websocket: WebSocket, message: Dict):
+        """
+        会話履歴を管理し、最新のMAX_HISTORY_LENGTH組の会話を保持します
+        Args:
+            websocket: WebSocketコネクション
+            message: {"role": "user"|"assistant", "content": str}の形式のメッセージ
+        """
+        if websocket not in self.conversation_history:
+            self.conversation_history[websocket] = []
+        
+        history = self.conversation_history[websocket]
+        history.append(message)
+        
+        # 最新の10組（ユーザーとアシスタントのペア）のみを保持
+        if len(history) > MAX_HISTORY_LENGTH * 2:
+            excess = len(history) - (MAX_HISTORY_LENGTH * 2)
+            self.conversation_history[websocket] = history[excess:]
+            logger.info(f"{excess}個の古い会話履歴を削除しました")
+
+    def get_conversation_history(self, websocket: WebSocket) -> List[Dict]:
+        """
+        特定のWebSocket接続の会話履歴を取得します
+        """
+        return self.conversation_history.get(websocket, [])
 
 manager = ConnectionManager()
 
@@ -159,7 +186,14 @@ async def get_gpt_response(messages: List[Dict]) -> str:
         completion = await client.chat.completions.create(
             model=GPT_MODEL,
             messages=[
-                {"role": "system", "content": "あなたは親切で役立つAIアシスタントです。"},
+                {
+                    "role": "system",
+                    "content": """あなたは親切で役立つAIアシスタントです。
+                    - ユーザーの質問に対して、明確で簡潔な日本語で回答してください
+                    - 専門用語を使う場合は、必ず分かりやすい説明を添えてください
+                    - 不確かな情報は提供せず、確信が持てない場合はその旨を伝えてください
+                    - 返答は150文字程度を目安に、簡潔にまとめてください"""
+                },
                 *messages
             ],
             temperature=TEMPERATURE,

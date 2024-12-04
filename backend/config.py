@@ -38,6 +38,9 @@ VOICE_FORMAT = "mp3"
 MAX_RETRIES = 3
 RETRY_DELAY = 1  # seconds
 
+# 会話履歴の設定
+MAX_HISTORY_LENGTH = 10  # 保持する会話ペアの最大数（ユーザーの発言とAIの応答のペア）
+
 # 環境変数のバリデーション
 required_vars = ["OPENAI_API_KEY", "VOICE_API_TOKEN", "VOICE_API_BASE_URL"]
 missing_vars = [var for var in required_vars if not globals()[var]]

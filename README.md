@@ -65,8 +65,11 @@ npm run dev
 cd backend
 python app.py
 ```
-
-2. ブラウザでアクセス:
+2.フロントエンド実行
+```
+python -m http.server 3000
+```
+3. ブラウザでアクセス:
 ```
 http://localhost:3000
 ```
